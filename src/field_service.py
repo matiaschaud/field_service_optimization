@@ -313,6 +313,112 @@ def add_constraint_matrix(my_problem, data):
         # row = [indices,values]
         # my_problem.linear_constraints.add(lin_expr=[row], senses=["G"], rhs=[0]) 
 
+    # Restricción 16:  La diferencia entre el trabajador con mas ordenes asignadas y el trabajador con menos ordenes no puede ser mayor a 10. Para esto se consideran todos los trabajadores, a un los que no tienen ninguna tarea asignada esta semana.
+    for trabajador1 in range(data.cantidad_trabajadores):
+        for trabajador2 in range(data.cantidad_trabajadores):
+            if trabajador1 != trabajador2:
+                indices = []
+                values = []
+                indices.append(data.map_var[f"W{trabajador1}"])
+                values.append(1)
+                indices.append(data.map_var[f"W{trabajador2}"])
+                values.append(-1)
+                row = [indices,values]
+                my_problem.linear_constraints.add(lin_expr=[row], senses=["L"], rhs=[10])             
+
+    # restricción 18: Existen algunos pares de ordenes de trabajo correlativas. Un par ordenado de  ordenes correlativas A y B, nos indica que si se satisface A, entonces debe satisfacerse B ese mismo dia en el turno consecutivo.
+    for corr1, corr2 in data.ordenes_correlativas:
+        restricciones_correlativas_ordenes(corr1, corr2, my_problem, data)
+
+    # Restricción 21: Hay pares de ordenes de trabajo que no pueden ser satisfechas en turnos consecutivos de un trabajador
+    for corr1, corr2 in data.ordenes_correlativas:
+        restricciones_correlativas_ordenes_mismo_trabajador(corr1, corr2, my_problem, data)
+
+    # Restriccion deseable 23: Hay conflictos entre algunos trabajadores que hacen que prefieran no ser asignados a una misma orden de trabajo.
+    for trab1, trab2 in data.conflictos_trabajadores:
+        restriccion_deseable_trabajadores_conflictivos(trab1, trab2, my_problem, data)
+
+    # Restriccion deseable 24: Hay pares de  ordenes de trabajo que son repetitivas por lo que sería bueno que un mismo trabajador no sea asignado a ambas.
+    for ord1, ord2 in data.ordenes_repetitivas:
+        restriccion_deseable_ordenes_repetitivas(ord1, ord2, my_problem, data)
+
+def restriccion_deseable_ordenes_repetitivas(ord1, ord2, my_problem, data):
+    for trabajador in range(data.cantidad_trabajadores):
+        indices = []
+        values = []
+        for turno in range(data.cantidad_turnos_por_dia):
+            for dia in range(data.cantidad_dias):
+                indices.append(data.map_var[f"X{trabajador},{turno},{dia},{ord1}"])
+                values.append(1)
+                indices.append(data.map_var[f"X{trabajador},{turno},{dia},{ord2}"])
+                values.append(1)
+        row = [indices,values]
+        my_problem.linear_constraints.add(lin_expr=[row], senses=["L"], rhs=[1])
+
+def restriccion_deseable_trabajadores_conflictivos(trab1, trab2,  my_problem, data):
+    for turno in range(data.cantidad_turnos_por_dia):
+        for dia in range(data.cantidad_dias):
+            for orden in range(data.cantidad_ordenes):
+                indices = []
+                values = []
+                indices.append(data.map_var[f"X{trab1},{turno},{dia},{orden}"])
+                values.append(1)
+                indices.append(data.map_var[f"X{trab2},{turno},{dia},{orden}"])
+                values.append(1)
+                row = [indices,values]
+                my_problem.linear_constraints.add(lin_expr=[row], senses=["L"], rhs=[1])
+
+def restricciones_correlativas_ordenes_mismo_trabajador(corr1, corr2, my_problem, data):
+    for trabajador in range(data.cantidad_trabajadores):
+        for dia in range(data.cantidad_dias):
+            for turno in range(data.cantidad_turnos_por_dia - 1):
+                indices = []
+                values = []
+                indices.append(data.map_var[f"X{trabajador},{turno},{dia},{corr1}"])
+                values.append(1)
+                indices.append(data.map_var[f"X{trabajador},{turno+1},{dia},{corr2}"])
+                values.append(-1)
+                row = [indices,values]
+                my_problem.linear_constraints.add(lin_expr=[row], senses=["L"], rhs=[1])
+
+            for turno in range(data.cantidad_turnos_por_dia - 1,0,-1):
+                indices = []
+                values = []
+                indices.append(data.map_var[f"X{trabajador},{turno},{dia},{corr1}"])
+                values.append(1)
+                indices.append(data.map_var[f"X{trabajador},{turno-1},{dia},{corr2}"])
+                values.append(-1)
+                row = [indices,values]
+                my_problem.linear_constraints.add(lin_expr=[row], senses=["L"], rhs=[1])
+
+
+def restricciones_correlativas_ordenes(corr1, corr2, my_problem, data):
+    for dia in range(data.cantidad_dias):
+        for turno in range(data.cantidad_turnos_por_dia - 1):
+            indices = []
+            values = []
+            indices.append(data.map_var[f"Y{turno},{dia},{corr1}"])
+            values.append(1)
+            indices.append(data.map_var[f"Y{turno+1},{dia},{corr2}"])
+            values.append(-1)
+            row = [indices,values]
+            my_problem.linear_constraints.add(lin_expr=[row], senses=["E"], rhs=[0])
+        # La orden corr1 no puede ser asignada en el último turno de un día
+        indices = []
+        values  = []
+        indices.append(data.map_var[f"Y{data.cantidad_turnos_por_dia - 1},{dia},{corr1}"])
+        values.append(1)
+        row = [indices,values]
+        my_problem.linear_constraints.add(lin_expr=[row], senses=["E"], rhs=[0])
+        # La orden corr2 no puede ser asignada en el primer turno de un día
+        indices = []
+        values  = []
+        indices.append(data.map_var[f"Y{0},{dia},{corr2}"])
+        values.append(1)
+        row = [indices,values]
+        my_problem.linear_constraints.add(lin_expr=[row], senses=["E"], rhs=[0])
+
+
 
 def populate_by_row(my_problem, data):
     
