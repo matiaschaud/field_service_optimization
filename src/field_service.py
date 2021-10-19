@@ -25,7 +25,8 @@ class FieldWorkAssignment:
         self.ordenes_correlativas = []
         self.ordenes_conflictivas = []
         self.ordenes_repetitivas = []
-        self.map_var = {}
+
+        self.map_var = {} # "nombre_variable": indice -> ej: "X1,1,2,3": 10
         self.names = []
         self.cantidad_dias = 6
         self.cantidad_turnos_por_dia = 5 
@@ -98,8 +99,8 @@ def get_instance_data():
     
 
 def add_constraint_matrix(my_problem, data):
-
-    # Restricción 1: No se pueden realizar varias ordenes en un mismo turno, si comparten trabajadores
+    # restriccion ejemplo: X1,1,1,1 + X1,1,1,2 + ... + X1,1,1,9 <= 1
+    # Restricción 1: No se pueden realizar varias ordenes en un mismo turno si comparten trabajadores
     for trabajador in range(data.cantidad_trabajadores):
         for turno in range(data.cantidad_turnos_por_dia):
             for dia in range(data.cantidad_dias):
@@ -148,6 +149,8 @@ def add_constraint_matrix(my_problem, data):
                 values.append(orden.trabajadores_necesarios * -1)
                 row = [indices,values]
                 my_problem.linear_constraints.add(lin_expr=[row], senses=["E"], rhs=[0])
+                # E (=)
+                # L (<=)
 
     # Restricción 4: Ningún trabajador puede trabajar los 6 días de la semana
     for trabajador in range(data.cantidad_trabajadores):
@@ -184,7 +187,132 @@ def add_constraint_matrix(my_problem, data):
             row = [indices,values]
             my_problem.linear_constraints.add(lin_expr=[row], senses=["L"], rhs=[4])
 
+    # Restricción 6: Los trabajadores son remunerados segun la cantidad de ordenes asignadas
+    # * 0  a  5 ordenes: 1000
+    # * 5  a 10 ordenes: 1200
+    # * 10 a 15 ordenes: 1400
+    # * > 15 ordenes: 1500
+    for trabajador in range(data.cantidad_trabajadores):
+        indices = []
+        values = []
+        for turno in range(data.cantidad_turnos_por_dia):
+            for dia in range(data.cantidad_dias):
+                for orden in data.ordenes:
+                    indices.append(data.map_var[f"X{trabajador},{turno},{dia},{orden.id}"])
+                    values.append(1)
+        indices.append(data.map_var[f"W{trabajador}"])
+        values.append(-1)
+        row = [indices,values]
+        my_problem.linear_constraints.add(lin_expr=[row], senses=["E"], rhs=[0])
     
+    for trabajador in range(data.cantidad_trabajadores):
+        indices = []
+        values = []
+        for W in (range(1,5)):
+            indices.append(data.map_var[f"W{W}{trabajador}"])
+            values.append(1)
+        indices.append(data.map_var[f"W{trabajador}"])
+        values.append(-1)
+        row = [indices,values]
+        my_problem.linear_constraints.add(lin_expr=[row], senses=["E"], rhs=[0])
+
+    for trabajador in range(data.cantidad_trabajadores):
+        # A2t <= A1t
+        indices = []
+        values = []
+        indices.append(data.map_var[f"A2{trabajador}"])
+        values.append(1)
+        indices.append(data.map_var[f"A1{trabajador}"])
+        values.append(-1)
+        row = [indices,values]
+        my_problem.linear_constraints.add(lin_expr=[row], senses=["L"], rhs=[0])
+        # A3t <= A2t
+        indices = []
+        values = []
+        indices.append(data.map_var[f"A3{trabajador}"])
+        values.append(1)
+        indices.append(data.map_var[f"A2{trabajador}"])
+        values.append(-1)
+        row = [indices,values]
+        my_problem.linear_constraints.add(lin_expr=[row], senses=["L"], rhs=[0])
+
+    for trabajador in range(data.cantidad_trabajadores):
+        # 5*A1t <= W1t <= 5
+        # W1t <= 5
+        indices = []
+        values = []
+        indices.append(data.map_var[f"W1{trabajador}"])
+        values.append(1)
+        row = [indices,values]
+        my_problem.linear_constraints.add(lin_expr=[row], senses=["L"], rhs=[5])
+        # 5*A1t <= W1t
+        indices = []
+        values = []
+        indices.append(data.map_var[f"W1{trabajador}"])
+        values.append(1)
+        indices.append(data.map_var[f"A1{trabajador}"])
+        values.append(-5)
+        row = [indices,values]
+        my_problem.linear_constraints.add(lin_expr=[row], senses=["G"], rhs=[0])
+        # (10-5) A2t <= W2t <= (10-5) * A1t
+        # W2t <= (10-5) * A1t
+        indices = []
+        values = []
+        indices.append(data.map_var[f"W2{trabajador}"])
+        values.append(1)
+        indices.append(data.map_var[f"A1{trabajador}"])
+        values.append(-5)
+        row = [indices,values]
+        my_problem.linear_constraints.add(lin_expr=[row], senses=["L"], rhs=[0])
+        # (10-5) A2t <= W2t
+        indices = []
+        values = []
+        indices.append(data.map_var[f"W2{trabajador}"])
+        values.append(1)
+        indices.append(data.map_var[f"A2{trabajador}"])
+        values.append(-5)
+        row = [indices,values]
+        my_problem.linear_constraints.add(lin_expr=[row], senses=["G"], rhs=[0])
+        # (15-10) A3t <= W3t <= (15-10) * A2t
+        # W3t <= (15-10) * A2t
+        indices = []
+        values = []
+        indices.append(data.map_var[f"W3{trabajador}"])
+        values.append(1)
+        indices.append(data.map_var[f"A2{trabajador}"])
+        values.append(-5)
+        row = [indices,values]
+        my_problem.linear_constraints.add(lin_expr=[row], senses=["L"], rhs=[0])
+        # (15-10) A3t <= W3t
+        indices = []
+        values = []
+        indices.append(data.map_var[f"W3{trabajador}"])
+        values.append(1)
+        indices.append(data.map_var[f"A3{trabajador}"])
+        values.append(-5)
+        row = [indices,values]
+        my_problem.linear_constraints.add(lin_expr=[row], senses=["G"], rhs=[0])    
+        # 0 <= W4t <= (20-15) * A3t
+        # W4t <= (20-15) * A3t
+        indices = []
+        values = []
+        indices.append(data.map_var[f"W4{trabajador}"])
+        values.append(1)
+        indices.append(data.map_var[f"A3{trabajador}"])
+        values.append(-5)
+        row = [indices,values]
+        my_problem.linear_constraints.add(lin_expr=[row], senses=["L"], rhs=[0])
+        # Esta restricción ya esta cubierta?
+        # 0 <= W4t
+        # indices = []
+        # values = []
+        # indices.append(data.map_var[f"W4{trabajador}"])
+        # values.append(1)
+        # indices.append(1)
+        # values.append(0)
+        # row = [indices,values]
+        # my_problem.linear_constraints.add(lin_expr=[row], senses=["G"], rhs=[0]) 
+
 
 def populate_by_row(my_problem, data):
     
@@ -204,7 +332,7 @@ def populate_by_row(my_problem, data):
         for turno in range(data.cantidad_turnos_por_dia):
             for dia in range(data.cantidad_dias):
                 for orden in range(data.cantidad_ordenes):
-                    coeficientes_funcion_objetivo.append(-1000)
+                    coeficientes_funcion_objetivo.append(0)
                     name = f"X{trabajador},{turno},{dia},{orden}"
                     data.names.append(name)
                     data.map_var[name]=len(coeficientes_funcion_objetivo)-1
@@ -225,16 +353,52 @@ def populate_by_row(my_problem, data):
             data.names.append(name)
             data.map_var[name]=len(coeficientes_funcion_objetivo)-1
 
+
+    # Añadimos las variables A1t, A2t, A3t, A4t
+    for trabajador in range(data.cantidad_trabajadores):
+        for aux in range(1,4):
+            coeficientes_funcion_objetivo.append(0)
+            name = f"A{aux}{trabajador}"
+            data.names.append(name)
+            data.map_var[name]=len(coeficientes_funcion_objetivo)-1
+
     # Como hasta acá todas las variables son booleanas, corresponde:
     lb = [0]*len(coeficientes_funcion_objetivo)
     ub = [1]*len(coeficientes_funcion_objetivo)
     types = ['B']*len(coeficientes_funcion_objetivo)
-    		
+
+    # Definimos las variables W1t, W2t, W3t, W4t
+    pagas = {1: 1000, 2: 1200, 3:1400, 4:1500}
     
+    for trabajador in range(data.cantidad_trabajadores):
+        for aux in range(1,5):
+            coeficientes_funcion_objetivo.append(pagas[aux]*(-1))
+            name = f"W{aux}{trabajador}"
+            data.names.append(name)
+            data.map_var[name]=len(coeficientes_funcion_objetivo)-1
+
+    # Guardamos en una variable los distintos tipos posibles para utilizarlos dentro de variables.add
+    t = my_problem.variables.type
+
+    lb = lb + [0] * (data.cantidad_trabajadores * 4)
+    ub = ub + [5] * (data.cantidad_trabajadores * 4)
+    types = types + [t.integer]*(data.cantidad_trabajadores * 4)
+
+    # Añadimos las variables Wt
+    for trabajador in range(data.cantidad_trabajadores):
+        coeficientes_funcion_objetivo.append(0)
+        name = f"W{trabajador}"
+        data.names.append(name)
+        data.map_var[name]=len(coeficientes_funcion_objetivo)-1
+    
+    lb = lb + [0] * (data.cantidad_trabajadores)
+    ub = ub + [20] * (data.cantidad_trabajadores)
+    types = types + [t.integer]*(data.cantidad_trabajadores)
+
     my_problem.variables.add(obj = coeficientes_funcion_objetivo, lb = lb , ub = ub, types = types, names = data.names) 
 
     # Seteamos direccion del problema
-    # ~ my_problem.objective.set_sense(my_problem.objective.sense.maximize)
+    my_problem.objective.set_sense(my_problem.objective.sense.maximize)
     # ~ my_problem.objective.set_sense(my_problem.objective.sense.minimize)
 
     # Definimos las restricciones del modelo. Encapsulamos esto en una funcion. 
