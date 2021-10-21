@@ -1,0 +1,52 @@
+Default row names c1, c2 ... being created.
+Version identifier: 20.1.0.0 | 2020-11-10 | 9bedb6d68
+CPXPARAM_Read_DataCheck                          1
+Found incumbent of value 0.000000 after 0.01 sec. (1.72 ticks)
+Tried aggregator 2 times.
+MIP Presolve eliminated 13316 rows and 2268 columns.
+MIP Presolve modified 120 coefficients.
+Aggregator did 1040 substitutions.
+Reduced MIP has 9564 rows, 60072 columns, and 307920 nonzeros.        
+Reduced MIP has 59992 binaries, 80 generals, 0 SOSs, and 0 indicators.
+Presolve time = 0.38 sec. (774.54 ticks)
+Tried aggregator 1 time.
+Detecting symmetries...
+Reduced MIP has 9564 rows, 60072 columns, and 307920 nonzeros.
+Reduced MIP has 59992 binaries, 80 generals, 0 SOSs, and 0 indicators.
+Presolve time = 0.16 sec. (261.70 ticks)
+Probing time = 0.08 sec. (21.42 ticks)
+Clique table members: 164496.
+MIP emphasis: balance optimality and feasibility.
+MIP search method: dynamic search.
+Parallel mode: deterministic, using up to 16 threads.
+Root relaxation solution time = 0.13 sec. (230.64 ticks)
+
+        Nodes                                         Cuts/
+   Node  Left     Objective  IInf  Best Integer    Best Bound    ItCnt     Gap
+
+*     0+    0                            0.0000   872294.0000              ---
+      0     0   618482.0000   255        0.0000   618482.0000      685     ---
+      0     0   618482.0000   324        0.0000     Cuts: 645     1671     --- 
+*     0+    0                       618482.0000   618482.0000             0.00%
+      0     0        cutoff         618482.0000   618482.0000     2399    0.00%
+Elapsed time = 2.11 sec. (3785.01 ticks, tree = 0.01 MB, solutions = 2)
+
+GUB cover cuts applied:  451
+Clique cuts applied:  73
+Cover cuts applied:  4
+Flow cuts applied:  3
+Mixed integer rounding cuts applied:  190
+Zero-half cuts applied:  92
+Lift and project cuts applied:  3
+Gomory fractional cuts applied:  118
+
+Root node processing (before b&c):
+  Real time             =    2.11 sec. (3788.72 ticks)
+Parallel b&c, 16 threads:
+  Real time             =    0.00 sec. (0.00 ticks)
+  Sync time (average)   =    0.00 sec.
+  Wait time (average)   =    0.00 sec.
+                          ------------
+Total (root+branch&cut) =    2.11 sec. (3788.72 ticks)
+Funcion objetivo:  618482.0
+Status solucion:  integer optimal solution (101)
