@@ -1,6 +1,5 @@
 import sys
 import cplex
-# import numpy as np
 
 TOLERANCE =10e-6 
 
@@ -99,8 +98,8 @@ def get_instance_data():
     
 
 def add_constraint_matrix(my_problem, data):
-    # restriccion ejemplo: X1,1,1,1 + X1,1,1,2 + ... + X1,1,1,9 <= 1
-    # Restricción 1: No se pueden realizar varias ordenes en un mismo turno si comparten trabajadores
+
+    # Restricción: No se pueden realizar varias ordenes en un mismo turno si comparten trabajadores
     for trabajador in range(data.cantidad_trabajadores):
         for turno in range(data.cantidad_turnos_por_dia):
             for dia in range(data.cantidad_dias):
@@ -112,7 +111,7 @@ def add_constraint_matrix(my_problem, data):
                 row = [indices,values]
                 my_problem.linear_constraints.add(lin_expr=[row], senses=["L"], rhs=[1])
     
-    # Restricción 2: Una orden de trabajo debe tener sus To trabajadores para poder ser resuelta.
+    # Restricción: Una orden de trabajo debe tener sus To trabajadores para poder ser resuelta.
     for orden in data.ordenes:
         indices = []
         values = []
@@ -126,7 +125,7 @@ def add_constraint_matrix(my_problem, data):
         row = [indices,values]
         my_problem.linear_constraints.add(lin_expr=[row], senses=["E"], rhs=[0])
 
-    # Restricción 3: Una orden se puede realizar solo en un horario
+    # Restricción: Una orden se puede realizar solo en un horario
     for orden in data.ordenes:
         indices = []
         values = []
@@ -152,7 +151,7 @@ def add_constraint_matrix(my_problem, data):
                 # E (=)
                 # L (<=)
 
-    # Restricción 4: Ningún trabajador puede trabajar los 6 días de la semana
+    # Restricción: Ningún trabajador puede trabajar los 6 días de la semana
     for trabajador in range(data.cantidad_trabajadores):
         indices = []
         values = []
@@ -175,7 +174,7 @@ def add_constraint_matrix(my_problem, data):
             row = [indices,values]
             my_problem.linear_constraints.add(lin_expr=[row], senses=["L"], rhs=[0])
 
-    # Restricción 5: Ningún trabajador puede trabajar los 5 turnos en un día.
+    # Restricción: Ningún trabajador puede trabajar los 5 turnos en un día.
     for trabajador in range(data.cantidad_trabajadores):
         for dia in range(data.cantidad_dias):
             indices = []
@@ -209,7 +208,7 @@ def add_constraint_matrix(my_problem, data):
         indices = []
         values = []
         for W in (range(1,5)):
-            indices.append(data.map_var[f"W{W}{trabajador}"])
+            indices.append(data.map_var[f"W{W},{trabajador}"])
             values.append(1)
         indices.append(data.map_var[f"W{trabajador}"])
         values.append(-1)
@@ -241,14 +240,14 @@ def add_constraint_matrix(my_problem, data):
         # W1t <= 5
         indices = []
         values = []
-        indices.append(data.map_var[f"W1{trabajador}"])
+        indices.append(data.map_var[f"W1,{trabajador}"])
         values.append(1)
         row = [indices,values]
         my_problem.linear_constraints.add(lin_expr=[row], senses=["L"], rhs=[5])
         # 5*A1t <= W1t
         indices = []
         values = []
-        indices.append(data.map_var[f"W1{trabajador}"])
+        indices.append(data.map_var[f"W1,{trabajador}"])
         values.append(1)
         indices.append(data.map_var[f"A1{trabajador}"])
         values.append(-5)
@@ -258,7 +257,7 @@ def add_constraint_matrix(my_problem, data):
         # W2t <= (10-5) * A1t
         indices = []
         values = []
-        indices.append(data.map_var[f"W2{trabajador}"])
+        indices.append(data.map_var[f"W2,{trabajador}"])
         values.append(1)
         indices.append(data.map_var[f"A1{trabajador}"])
         values.append(-5)
@@ -267,7 +266,7 @@ def add_constraint_matrix(my_problem, data):
         # (10-5) A2t <= W2t
         indices = []
         values = []
-        indices.append(data.map_var[f"W2{trabajador}"])
+        indices.append(data.map_var[f"W2,{trabajador}"])
         values.append(1)
         indices.append(data.map_var[f"A2{trabajador}"])
         values.append(-5)
@@ -277,7 +276,7 @@ def add_constraint_matrix(my_problem, data):
         # W3t <= (15-10) * A2t
         indices = []
         values = []
-        indices.append(data.map_var[f"W3{trabajador}"])
+        indices.append(data.map_var[f"W3,{trabajador}"])
         values.append(1)
         indices.append(data.map_var[f"A2{trabajador}"])
         values.append(-5)
@@ -286,7 +285,7 @@ def add_constraint_matrix(my_problem, data):
         # (15-10) A3t <= W3t
         indices = []
         values = []
-        indices.append(data.map_var[f"W3{trabajador}"])
+        indices.append(data.map_var[f"W3,{trabajador}"])
         values.append(1)
         indices.append(data.map_var[f"A3{trabajador}"])
         values.append(-5)
@@ -296,24 +295,14 @@ def add_constraint_matrix(my_problem, data):
         # W4t <= (20-15) * A3t
         indices = []
         values = []
-        indices.append(data.map_var[f"W4{trabajador}"])
+        indices.append(data.map_var[f"W4,{trabajador}"])
         values.append(1)
         indices.append(data.map_var[f"A3{trabajador}"])
         values.append(-5)
         row = [indices,values]
         my_problem.linear_constraints.add(lin_expr=[row], senses=["L"], rhs=[0])
-        # Esta restricción ya esta cubierta?
-        # 0 <= W4t
-        # indices = []
-        # values = []
-        # indices.append(data.map_var[f"W4{trabajador}"])
-        # values.append(1)
-        # indices.append(1)
-        # values.append(0)
-        # row = [indices,values]
-        # my_problem.linear_constraints.add(lin_expr=[row], senses=["G"], rhs=[0]) 
 
-    # Restricción 16:  La diferencia entre el trabajador con mas ordenes asignadas y el trabajador con menos ordenes no puede ser mayor a 10. Para esto se consideran todos los trabajadores, a un los que no tienen ninguna tarea asignada esta semana.
+    # Restricción:  La diferencia entre el trabajador con mas ordenes asignadas y el trabajador con menos ordenes no puede ser mayor a 10. Para esto se consideran todos los trabajadores, a un los que no tienen ninguna tarea asignada esta semana.
     for trabajador1 in range(data.cantidad_trabajadores):
         for trabajador2 in range(data.cantidad_trabajadores):
             if trabajador1 != trabajador2:
@@ -326,22 +315,23 @@ def add_constraint_matrix(my_problem, data):
                 row = [indices,values]
                 my_problem.linear_constraints.add(lin_expr=[row], senses=["L"], rhs=[10])             
 
-    # restricción 18: Existen algunos pares de ordenes de trabajo correlativas. Un par ordenado de  ordenes correlativas A y B, nos indica que si se satisface A, entonces debe satisfacerse B ese mismo dia en el turno consecutivo.
+    # restricción: Existen algunos pares de ordenes de trabajo correlativas. Un par ordenado de  ordenes correlativas A y B, nos indica que si se satisface A, entonces debe satisfacerse B ese mismo dia en el turno consecutivo.
     for corr1, corr2 in data.ordenes_correlativas:
         restricciones_correlativas_ordenes(corr1, corr2, my_problem, data)
 
-    # Restricción 21: Hay pares de ordenes de trabajo que no pueden ser satisfechas en turnos consecutivos de un trabajador
+    # Restricción: Hay pares de ordenes de trabajo que no pueden ser satisfechas en turnos consecutivos de un trabajador
     for corr1, corr2 in data.ordenes_correlativas:
         restricciones_correlativas_ordenes_mismo_trabajador(corr1, corr2, my_problem, data)
 
-    # Restriccion deseable 23: Hay conflictos entre algunos trabajadores que hacen que prefieran no ser asignados a una misma orden de trabajo.
+    # Restriccion deseable: Hay conflictos entre algunos trabajadores que hacen que prefieran no ser asignados a una misma orden de trabajo.
     for trab1, trab2 in data.conflictos_trabajadores:
         restriccion_deseable_trabajadores_conflictivos(trab1, trab2, my_problem, data)
 
-    # Restriccion deseable 24: Hay pares de  ordenes de trabajo que son repetitivas por lo que sería bueno que un mismo trabajador no sea asignado a ambas.
+    # Restriccion deseable: Hay pares de  ordenes de trabajo que son repetitivas por lo que sería bueno que un mismo trabajador no sea asignado a ambas.
     for ord1, ord2 in data.ordenes_repetitivas:
         restriccion_deseable_ordenes_repetitivas(ord1, ord2, my_problem, data)
 
+# Funciones para restricciones que son parametrizadas
 def restriccion_deseable_ordenes_repetitivas(ord1, ord2, my_problem, data):
     for trabajador in range(data.cantidad_trabajadores):
         indices = []
@@ -479,7 +469,7 @@ def populate_by_row(my_problem, data):
     for trabajador in range(data.cantidad_trabajadores):
         for aux in range(1,5):
             coeficientes_funcion_objetivo.append(pagas[aux]*(-1))
-            name = f"W{aux}{trabajador}"
+            name = f"W{aux},{trabajador}"
             data.names.append(name)
             data.map_var[name]=len(coeficientes_funcion_objetivo)-1
 
@@ -530,11 +520,12 @@ def solve_lp(my_problem, data):
     print('Status solucion: ',status_string,'(' + str(status) + ')')
 
     # Imprimimos las variables usadas.
-    for i in range(len(x_variables)):
-        # Tomamos esto como valor de tolerancia, por cuestiones numericas.
-        if x_variables[i] > TOLERANCE:
-            # pass
-            print(str(data.names[i]) + ':' , x_variables[i])
+    with open("resultado.txt","w") as archivo:
+        for i in range(len(x_variables)):
+            # Tomamos esto como valor de tolerancia, por cuestiones numericas.
+            if x_variables[i] > TOLERANCE:
+                archivo.write(f"{data.names[i]}:{x_variables[i]}\n")
+                # print(str(data.names[i]) + ':' , x_variables[i])
 
 def main():
     
